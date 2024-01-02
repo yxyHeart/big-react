@@ -3,7 +3,7 @@ import { commitMutationEffects } from './commitWork';
 import { completeWork } from './completeWork';
 import { FiberNode, FiberRootNode, createWorkInProgress } from './fiber';
 import { MutationMask, NoFlags } from './fiberFlags';
-import { HostRoot } from './workingTags';
+import { HostRoot } from './workTags';
 
 let workInProgress: FiberNode | null = null;
 
