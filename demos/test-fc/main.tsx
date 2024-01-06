@@ -22,4 +22,5 @@ function Child({ children }) {
 
 const root = ReactDOM.createRoot(document.querySelector('#root'));
 
+console.log(self === window);
 root.render(<App />);
