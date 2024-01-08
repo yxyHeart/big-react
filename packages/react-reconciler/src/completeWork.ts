@@ -13,10 +13,14 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
-import { NoFlags, Update } from './fiberFlags';
+import { NoFlags, Ref, Update } from './fiberFlags';
 
 function markUpdate(fiber: FiberNode) {
 	fiber.flags |= Update;
+}
+
+function markRef(fiber: FiberNode) {
+	fiber.flags |= Ref;
 }
 
 export const completeWork = (wip: FiberNode) => {
@@ -32,13 +36,20 @@ export const completeWork = (wip: FiberNode) => {
 				//1.props是否变化
 				//2.变了Update Flag
 				markUpdate(wip);
-				// updateFiberProps(wip.stateNode, newProps);
+				// 标记ref
+				if (current.ref !== wip.ref) {
+					markRef(wip);
+				}
 			} else {
 				//1.构建DOM
 				const instance = createInstance(wip.type, newProps);
 				//2.将DOM插入到DOM树中
 				appendAllChildren(instance, wip);
 				wip.stateNode = instance;
+				// 标记ref
+				if (wip.ref !== null) {
+					markRef(wip);
+				}
 			}
 			bubbleProperties(wip);
 			return null;
@@ -47,7 +58,7 @@ export const completeWork = (wip: FiberNode) => {
 			//2.将dom插入dom树
 			if (current !== null && wip.stateNode) {
 				//update
-				const oldText = current.memoizedProps.content;
+				const oldText = current.memoizedProps?.content;
 				const newText = newProps.content;
 				if (oldText !== newText) {
 					markUpdate(wip);
