@@ -3,6 +3,8 @@ import currentDispatcher from './src/currentDispatcher';
 import { jsxDEV, jsx, isValidElement as isValidElementFn } from './src/jsx';
 import currentBatchConfig from './src/currentBatchConfig';
 
+export { createContext } from './src/context';
+
 export const useState: Dispatcher['useState'] = (initialState) => {
 	const dispatcher = resolveDispatcher();
 	return dispatcher.useState(initialState);
@@ -21,6 +23,11 @@ export const useTransition: Dispatcher['useTransition'] = () => {
 export const useRef: Dispatcher['useRef'] = (initialValue) => {
 	const dispatcher = resolveDispatcher();
 	return dispatcher.useRef(initialValue);
+};
+
+export const useContext: Dispatcher['useContext'] = (context) => {
+	const dispatcher = resolveDispatcher();
+	return dispatcher.useContext(context);
 };
 
 export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = {

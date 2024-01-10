@@ -261,11 +261,11 @@ function commitRoot(root: FiberRootNode) {
 		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
 	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
 	if (subtreeHasEffect || rootHasEffect) {
-		//beforeMutaion
-		//mutation
+		// beforeMutaion
+		// mutation
 		commitMutationEffects(finishedWork, root);
 		root.current = finishedWork;
-		//layout
+		// layout
 		commitLayoutEffects(finishedWork, root);
 	} else {
 		root.current = finishedWork;
