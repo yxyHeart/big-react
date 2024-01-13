@@ -20,8 +20,15 @@ import {
 import { mountChildFibers, reconcileChildFibers } from './childFibers';
 import { renderWithHooks } from './fiberHooks';
 import { Lane } from './fiberLanes';
-import { ChildDeletion, Placement, Ref } from './fiberFlags';
+import {
+	ChildDeletion,
+	DidCapture,
+	NoFlags,
+	Placement,
+	Ref
+} from './fiberFlags';
 import { pushProvider } from './fiberContext';
+import { pushSuspenseHandler } from './suspenseContext';
 
 export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 	switch (wip.tag) {
@@ -55,14 +62,16 @@ function updateSuspenseComponent(wip: FiberNode) {
 	const nextProps = wip.pendingProps;
 
 	let showFallback = false;
-	const didSuspend = true;
+	const didSuspend = (wip.flags & DidCapture) !== NoFlags;
 
 	if (didSuspend) {
 		showFallback = true;
+		wip.flags &= ~DidCapture;
 	}
 
 	const nextPrimaryChildren = nextProps.chidlren;
 	const nextFallbackChidlren = nextProps.fallback;
+	pushSuspenseHandler(wip);
 
 	if (current === null) {
 		// mount
@@ -239,6 +248,11 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	const pending = updateQueue.shared.pending;
 	updateQueue.shared.pending = null;
 	const { memoizedState } = processUpdateQueue(baseState, pending, renderLane);
+
+	const current = wip.alternate;
+	if (current !== null) {
+		current.memoizedState = memoizedState;
+	}
 	wip.memoizedState = memoizedState;
 
 	const nextChildren = wip.memoizedState;
