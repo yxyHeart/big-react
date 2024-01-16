@@ -45,39 +45,38 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 	didReceiveUpdate = false;
 	const current = wip.alternate;
 
-	// if (current !== null) {
-	// 	console.log('bailout');
-	// 	const oldProps = current.memoizedProps;
-	// 	const newProps = wip.pendingProps;
-	// 	// 四要素～ props type
-	// 	// {num: 0, name: 'cpn2'}
-	// 	// {num: 0, name: 'cpn2'}
-	// 	if (oldProps !== newProps || current.type !== wip.type) {
-	// 		didReceiveUpdate = true;
-	// 	} else {
-	// 		// state context
-	// 		const hasScheduledStateOrContext = checkScheduledUpdateOrContext(
-	// 			current,
-	// 			renderLane
-	// 		);
-	// 		if (!hasScheduledStateOrContext) {
-	// 			// 四要素～ state context
-	// 			// 命中bailout
-	// 			didReceiveUpdate = false;
+	if (current !== null) {
+		const oldProps = current.memoizedProps;
+		const newProps = wip.pendingProps;
+		// 四要素～ props type
+		// {num: 0, name: 'cpn2'}
+		// {num: 0, name: 'cpn2'}
+		if (oldProps !== newProps || current.type !== wip.type) {
+			didReceiveUpdate = true;
+		} else {
+			// state context
+			const hasScheduledStateOrContext = checkScheduledUpdateOrContext(
+				current,
+				renderLane
+			);
+			if (!hasScheduledStateOrContext) {
+				// 四要素～ state context
+				// 命中bailout
+				didReceiveUpdate = false;
 
-	// 			switch (wip.tag) {
-	// 				case ContextProvider:
-	// 					const newValue = wip.memoizedProps.value;
-	// 					const context = wip.type._context;
-	// 					pushProvider(context, newValue);
-	// 					break;
-	// 				// TODO Suspense
-	// 			}
+				switch (wip.tag) {
+					case ContextProvider:
+						const newValue = wip.memoizedProps.value;
+						const context = wip.type._context;
+						pushProvider(context, newValue);
+						break;
+					// TODO: Suspense
+				}
 
-	// 			return bailouOnAlreadyFinishedWork(wip, renderLane);
-	// 		}
-	// 	}
-	// }
+				return bailoutOnAlreadyFinishedWork(wip, renderLane);
+			}
+		}
+	}
 
 	wip.lanes = NoLanes;
 	switch (wip.tag) {
@@ -106,7 +105,7 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 	return null;
 };
 
-function bailouOnAlreadyFinishedWork(wip: FiberNode, renderLane: Lane) {
+function bailoutOnAlreadyFinishedWork(wip: FiberNode, renderLane: Lane) {
 	if (!includeSomeLanes(wip.childLanes, renderLane)) {
 		if (__DEV__) {
 			console.warn('bailout整棵子树', wip);
@@ -313,11 +312,11 @@ function updateFragment(wip: FiberNode) {
 function updateFunctionComponent(wip: FiberNode, renderLane: Lane) {
 	const nextChildren = renderWithHooks(wip, renderLane);
 
-	// const current = wip.alternate;
-	// if (current !== null && !didReceiveUpdate) {
-	// 	bailoutHook(wip, renderLane);
-	// 	return bailouOnAlreadyFinishedWork(wip, renderLane);
-	// }
+	const current = wip.alternate;
+	if (current !== null && !didReceiveUpdate) {
+		bailoutHook(wip, renderLane);
+		return bailoutOnAlreadyFinishedWork(wip, renderLane);
+	}
 
 	reconcilChildren(wip, nextChildren);
 	return wip.child;
@@ -335,7 +334,9 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 
 	const current = wip.alternate;
 	if (current !== null) {
-		current.memoizedState = memoizedState;
+		if (!current.memoizedState) {
+			current.memoizedState = memoizedState;
+		}
 	}
 	wip.memoizedState = memoizedState;
 
@@ -347,9 +348,9 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	}
 
 	const nextChildren = wip.memoizedState;
-	// if (prevChildren === nextChildren) {
-	// 	return bailouOnAlreadyFinishedWork(wip, renderLane);
-	// }
+	if (prevChildren === nextChildren) {
+		return bailoutOnAlreadyFinishedWork(wip, renderLane);
+	}
 
 	reconcilChildren(wip, nextChildren);
 	return wip.child;

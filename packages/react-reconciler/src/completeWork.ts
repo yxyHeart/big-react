@@ -146,7 +146,10 @@ function bubbleProperties(wip: FiberNode) {
 		subtreeFlags |= child.subtreeFlags;
 		subtreeFlags |= child.flags;
 
-		newChildLanes = mergeLanes(newChildLanes, child.childLanes);
+		newChildLanes = mergeLanes(
+			newChildLanes,
+			mergeLanes(child.lanes, child.childLanes)
+		);
 
 		child.return = wip;
 		child = child.sibling;

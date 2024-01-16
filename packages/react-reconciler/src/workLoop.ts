@@ -379,9 +379,7 @@ function commitRoot(root: FiberRootNode) {
 	const subtreeHasEffect =
 		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
 	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
-	console.log(finishedWork, subtreeHasEffect, rootHasEffect);
 	if (subtreeHasEffect || rootHasEffect) {
-		console.log('存在mutation');
 		// beforeMutaion
 		// mutation
 		commitMutationEffects(finishedWork, root);
