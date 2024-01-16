@@ -44,7 +44,6 @@ import { SuspenseException, getSuspenseThenable } from './thenable';
 import { resetHooksOnUnwind } from './fiberHooks';
 import { throwException } from './fiberThrow';
 import { unwindWork } from './fiberUnwindWork';
-import { get } from 'http';
 
 let workInProgress: FiberNode | null = null;
 let wipRootRenderLane: Lane = NoLane;
@@ -52,14 +51,14 @@ let rootDoesHasPassiveEffects: boolean = false;
 
 type RootExitStatus = number;
 // 工作时的状态
-const RootInProcess = 0;
+const RootInProgress = 0;
 // 并发更新 中途打断
 const RootInComplete = 1;
 // render完成
 const RootCompleted = 2;
 // 由于挂起，当前时未完成状态，不用进入commit阶段
 const RootDidNotComplete = 3;
-let wipRootExitStatus: number = RootInProcess;
+let wipRootExitStatus: number = RootInProgress;
 
 type SuspendedReason = typeof NotSuspended | typeof SuspendedOnData;
 const NotSuspended = 0;
@@ -74,14 +73,14 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 	workInProgress = createWorkInProgress(root.current, {});
 	wipRootRenderLane = lane;
 
-	wipRootExitStatus = RootInProcess;
+	wipRootExitStatus = RootInProgress;
 	workInProgressSuspendedReason = NotSuspended;
 	workInProgressThrownValue = null;
 }
 
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	// fiberRootNode
-	const root = markUpdateFromFiberToRoot(fiber);
+	const root = markUpdateLaneFromFiberToRoot(fiber, lane);
 	markRootUpdated(root, lane);
 	ensureRootIsScheduled(root);
 }
@@ -145,10 +144,16 @@ export function markRootUpdated(root: FiberRootNode, lane: Lane) {
 	root.pendingLanes = mergeLanes(root.pendingLanes, lane);
 }
 
-function markUpdateFromFiberToRoot(fiber: FiberNode) {
+function markUpdateLaneFromFiberToRoot(fiber: FiberNode, lane: Lane) {
 	let node = fiber;
 	let parent = node.return;
 	while (parent !== null) {
+		parent.childLanes = mergeLanes(parent.childLanes, lane);
+		const alternate = parent.alternate;
+		if (alternate !== null) {
+			alternate.childLanes = mergeLanes(alternate.childLanes, lane);
+		}
+
 		node = parent;
 		parent = node.return;
 	}
@@ -203,6 +208,7 @@ function performConcurrentWorkOnRoot(
 			if (__DEV__) {
 				console.error('还未实现的并发更新结束状态');
 			}
+			break;
 	}
 }
 function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
@@ -220,8 +226,9 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 				workInProgressSuspendedReason !== NotSuspended &&
 				workInProgress !== null
 			) {
+				console.log(workInProgressSuspendedReason, workInProgress);
 				const thrownValue = workInProgressThrownValue;
-				workInProgressThrownValue = NotSuspended;
+				workInProgressSuspendedReason = NotSuspended;
 				workInProgressThrownValue = null;
 				// unwind
 				throwAndUnwindWorkLoop(root, workInProgress, thrownValue, lane);
@@ -233,12 +240,11 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 			if (__DEV__) {
 				console.warn('workLoop发生错误', e);
 			}
-			workInProgress = null;
 			handleThrow(root, e);
 		}
 	} while (true);
 
-	if (wipRootExitStatus !== RootInProcess) {
+	if (wipRootExitStatus !== RootInProgress) {
 		return wipRootExitStatus;
 	}
 	// 中断执行
@@ -302,6 +308,7 @@ function unwindUnitOfWork(unitOfWork: FiberNode) {
 
 		if (next !== null) {
 			next.flags &= HostEffectMask;
+			// 将下一个需要遍历的fiber设置为Suspense
 			workInProgress = next;
 			return;
 		}
@@ -315,8 +322,8 @@ function unwindUnitOfWork(unitOfWork: FiberNode) {
 	} while (incompleteWork !== null);
 
 	// 没有 边界 中止unwind流程，一直到root
-	workInProgress = null;
 	wipRootExitStatus = RootDidNotComplete;
+	workInProgress = null;
 }
 
 function handleThrow(root: FiberRootNode, thrownValue: any): void {
@@ -329,7 +336,7 @@ function handleThrow(root: FiberRootNode, thrownValue: any): void {
 		workInProgressSuspendedReason = SuspendedOnData;
 		thrownValue = getSuspenseThenable();
 	} else {
-		// TODO Error Boundary
+		// TODO: Error Boundary
 	}
 	workInProgressThrownValue = thrownValue;
 }
@@ -372,7 +379,9 @@ function commitRoot(root: FiberRootNode) {
 	const subtreeHasEffect =
 		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
 	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
+	console.log(finishedWork, subtreeHasEffect, rootHasEffect);
 	if (subtreeHasEffect || rootHasEffect) {
+		console.log('存在mutation');
 		// beforeMutaion
 		// mutation
 		commitMutationEffects(finishedWork, root);

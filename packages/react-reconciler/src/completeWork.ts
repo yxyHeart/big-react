@@ -19,6 +19,7 @@ import {
 import { NoFlags, Ref, Update, Visibility } from './fiberFlags';
 import { popProvider } from './fiberContext';
 import { popSuspenseHandler } from './suspenseContext';
+import { NoLanes, mergeLanes } from './fiberLanes';
 
 function markUpdate(fiber: FiberNode) {
 	fiber.flags |= Update;
@@ -97,10 +98,10 @@ export const completeWork = (wip: FiberNode) => {
 				if (isHidden !== wasHidden) {
 					offscreenFiber.flags |= Visibility;
 					bubbleProperties(offscreenFiber);
-				} else if (isHidden) {
-					offscreenFiber.flags |= Visibility;
-					bubbleProperties(offscreenFiber);
 				}
+			} else if (isHidden) {
+				offscreenFiber.flags |= Visibility;
+				bubbleProperties(offscreenFiber);
 			}
 			bubbleProperties(wip);
 			return null;
@@ -139,11 +140,17 @@ function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
 function bubbleProperties(wip: FiberNode) {
 	let subtreeFlags = NoFlags;
 	let child = wip.child;
+	let newChildLanes = NoLanes;
+
 	while (child !== null) {
 		subtreeFlags |= child.subtreeFlags;
 		subtreeFlags |= child.flags;
+
+		newChildLanes = mergeLanes(newChildLanes, child.childLanes);
+
 		child.return = wip;
 		child = child.sibling;
 	}
 	wip.subtreeFlags |= subtreeFlags;
+	wip.childLanes = newChildLanes;
 }

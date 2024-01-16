@@ -1,6 +1,6 @@
 export type Type = any;
 export type Key = any;
-export type Ref = { current: any } | ((instance: any) => void);
+export type Ref = { current: any } | ((instance: any) => void) | null;
 export type Props = any;
 export type ElementType = any;
 
@@ -42,7 +42,7 @@ export type ThenableImpl<T, Result, Err> = {
 	): void | Wakeable<Result>;
 };
 
-interface UntrackedThenable<T, Result, Err>
+export interface UntrackedThenable<T, Result, Err>
 	extends ThenableImpl<T, Result, Err> {
 	status?: void;
 }

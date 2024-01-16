@@ -13,7 +13,6 @@ export function scheduleSyncCallback(callback: anyFunction) {
 export function flushSyncCallbacks() {
 	if (!isFlushingSyncQueue && syncQueue) {
 		isFlushingSyncQueue = true;
-		console.log('enter');
 		try {
 			syncQueue.forEach((callback) => callback());
 		} catch (e) {

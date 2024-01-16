@@ -31,6 +31,7 @@ function attachPingListener(
 
 		// eslint-disable-next-line no-inner-declarations
 		function ping() {
+			console.log('ping');
 			if (pingCache !== null) {
 				pingCache.delete(wakeable);
 			}
