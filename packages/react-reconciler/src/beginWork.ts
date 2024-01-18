@@ -32,7 +32,11 @@ import {
 	Placement,
 	Ref
 } from './fiberFlags';
-import { pushProvider } from './fiberContext';
+import {
+	prepareToReadContext,
+	propagateContextChange,
+	pushProvider
+} from './fiberContext';
 import { pushSuspenseHandler } from './suspenseContext';
 import { shallowEqual } from 'shared/shallowEquals';
 
@@ -94,7 +98,7 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 		case Fragment:
 			return updateFragment(wip);
 		case ContextProvider:
-			return updateContextProvider(wip);
+			return updateContextProvider(wip, renderLane);
 		case SuspenseComponent:
 			return updateSuspenseComponent(wip);
 		case OffscreenComponent:
@@ -318,25 +322,40 @@ function mountSuspenseFallbackChildren(
 function updateOffscreenComponent(wip: FiberNode) {
 	const nextProps = wip.pendingProps;
 	const nextChildren = nextProps.children;
-	reconcilChildren(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 
-function updateContextProvider(wip: FiberNode) {
+function updateContextProvider(wip: FiberNode, renderLane: Lane) {
 	const providerType = wip.type;
 	const context = providerType._context;
 	const newProps = wip.pendingProps;
+	const oldProps = wip.memoizedProps;
+	const newValue = newProps.value;
 
-	pushProvider(context, newProps.value);
+	pushProvider(context, newValue);
+
+	if (oldProps !== null) {
+		const oldValue = oldProps.value;
+
+		if (
+			Object.is(oldValue, newValue) &&
+			oldProps.children === newProps.children
+		) {
+			return bailoutOnAlreadyFinishedWork(wip, renderLane);
+		} else {
+			propagateContextChange(wip, context, renderLane);
+		}
+	}
 
 	const nextChildren = newProps.children;
-	reconcilChildren(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 
 function updateFragment(wip: FiberNode) {
 	const nextChildren = wip.pendingProps;
-	reconcilChildren(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 
@@ -345,6 +364,7 @@ function updateFunctionComponent(
 	Component: FiberNode['type'],
 	renderLane: Lane
 ) {
+	prepareToReadContext(wip, renderLane);
 	const nextChildren = renderWithHooks(wip, Component, renderLane);
 
 	const current = wip.alternate;
@@ -353,7 +373,7 @@ function updateFunctionComponent(
 		return bailoutOnAlreadyFinishedWork(wip, renderLane);
 	}
 
-	reconcilChildren(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 
@@ -387,7 +407,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 		return bailoutOnAlreadyFinishedWork(wip, renderLane);
 	}
 
-	reconcilChildren(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 function updateHostComponent(wip: FiberNode) {
@@ -395,11 +415,11 @@ function updateHostComponent(wip: FiberNode) {
 	const nextChildren = nextProps.children;
 
 	markRef(wip.alternate, wip);
-	reconcilChildren(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 
-function reconcilChildren(wip: FiberNode, children?: ReactElementType) {
+function reconcileChildren(wip: FiberNode, children?: ReactElementType) {
 	const current = wip.alternate;
 	if (current !== null) {
 		wip.child = reconcileChildFibers(wip, current?.child, children);
