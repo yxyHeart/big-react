@@ -219,7 +219,7 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 		//初始化
 		prepareFreshStack(root, lane);
 	}
-
+	let c = 0;
 	do {
 		try {
 			if (
@@ -237,6 +237,11 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 			shouldTimeSlice ? workLoopConcurrent() : workLoopSync();
 			break;
 		} catch (e) {
+			c++;
+			if (c >= 20) {
+				console.warn(e);
+				break;
+			}
 			if (__DEV__) {
 				console.warn('workLoop发生错误', e);
 			}
