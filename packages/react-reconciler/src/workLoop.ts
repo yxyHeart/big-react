@@ -79,7 +79,7 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 }
 
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
-	// fiberRootNode
+	// 从触发更新的节点找到fiberRootNode
 	const root = markUpdateLaneFromFiberToRoot(fiber, lane);
 	markRootUpdated(root, lane);
 	ensureRootIsScheduled(root);
@@ -88,6 +88,7 @@ export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 export function ensureRootIsScheduled(root: FiberRootNode) {
 	const updateLane = getNextLane(root);
 	const existingCallback = root.callbackNode;
+	//没有任务要做了
 	if (updateLane === NoLane) {
 		if (existingCallback !== null) {
 			unstable_cancelCallback(existingCallback);
@@ -97,6 +98,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
 		return;
 	}
 
+	// 同一优先级performConcurrentWorkOnRoot会调用自己
 	const curPriority = updateLane;
 	const prevPriority = root.callabackPriority;
 
@@ -104,6 +106,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
 		return;
 	}
 
+	// 如果能进入到这里说明有更高优先级的调度
 	if (existingCallback !== null) {
 		unstable_cancelCallback(existingCallback);
 	}
@@ -220,6 +223,8 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 		prepareFreshStack(root, lane);
 	}
 	let c = 0;
+	let d = 1;
+	d++;
 	do {
 		try {
 			if (
