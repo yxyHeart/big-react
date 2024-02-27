@@ -220,6 +220,8 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 		prepareFreshStack(root, lane);
 	}
 	let c = 0;
+	let d = 1;
+	d++;
 	do {
 		try {
 			if (
