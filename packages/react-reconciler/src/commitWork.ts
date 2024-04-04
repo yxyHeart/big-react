@@ -36,7 +36,7 @@ import { HookHasEffect } from './hookEffectTags';
 
 let nextEffect: FiberNode | null = null;
 
-export const commitffects = (
+export const commitEffects = (
 	phase: 'mutation' | 'layout',
 	mask: Flags,
 	callback: (fiber: FiberNode, root: FiberRootNode) => void
@@ -206,14 +206,14 @@ function safelyAttachRef(fiber: FiberNode) {
 	}
 }
 
-export const commitMutationEffects = commitffects(
+export const commitMutationEffects = commitEffects(
 	'mutation',
 	MutationMask | PassiveMask,
 	commitMutationEffectsOnFiber
 );
 
-export const commitLayoutEffects = commitffects(
-	'mutation',
+export const commitLayoutEffects = commitEffects(
+	'layout',
 	LayoutMask,
 	commitLayoutEffectsOnFiber
 );
@@ -236,6 +236,7 @@ function commitPassiveEffect(
 		if (updateQueue.lastEffect === null && __DEV__) {
 			console.error('当FC存在PassiveEffect flag时,不应该不存在effect');
 		}
+		// lastEffect是一个环状链表
 		root.pendingPassiveEffects[type].push(updateQueue.lastEffect as Effect);
 	}
 }

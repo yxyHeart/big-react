@@ -386,7 +386,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	const prevChildren = wip.memoizedState;
 
 	const { memoizedState } = processUpdateQueue(baseState, pending, renderLane);
-
+	console.log(pending, memoizedState);
 	const current = wip.alternate;
 	if (current !== null) {
 		if (!current.memoizedState) {

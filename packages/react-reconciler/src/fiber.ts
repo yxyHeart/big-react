@@ -105,7 +105,7 @@ export class FiberRootNode {
 	pendingPassiveEffects: PendingPassiveEffects;
 
 	callbackNode: CallbackNode | null;
-	callabackPriority: Lane;
+	callbackPriority: Lane;
 
 	pingCache: WeakMap<Wakeable<any>, Set<Lane>> | null;
 	suspendedLanes: Lanes;
@@ -123,7 +123,7 @@ export class FiberRootNode {
 		this.finishedLane = NoLanes;
 
 		this.callbackNode = null;
-		this.callabackPriority = NoLane;
+		this.callbackPriority = NoLane;
 
 		this.pendingPassiveEffects = {
 			unmount: [],
@@ -147,6 +147,7 @@ export const createWorkInProgress = (
 		wip.alternate = current;
 		current.alternate = wip;
 	} else {
+		// 应该做一个dfs遍历，这里直接赋值
 		wip.pendingProps = pendingProps;
 		wip.flags = NoFlags;
 		wip.subtreeFlags = NoFlags;

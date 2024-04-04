@@ -94,13 +94,13 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
 			unstable_cancelCallback(existingCallback);
 		}
 		root.callbackNode = null;
-		root.callabackPriority = NoLane;
+		root.callbackPriority = NoLane;
 		return;
 	}
 
 	// 同一优先级performConcurrentWorkOnRoot会调用自己
 	const curPriority = updateLane;
-	const prevPriority = root.callabackPriority;
+	const prevPriority = root.callbackPriority;
 
 	if (curPriority === prevPriority) {
 		return;
@@ -140,7 +140,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
 	}
 
 	root.callbackNode = newCallbackNode;
-	root.callabackPriority = curPriority;
+	root.callbackPriority = curPriority;
 }
 
 export function markRootUpdated(root: FiberRootNode, lane: Lane) {
@@ -390,7 +390,7 @@ function commitRoot(root: FiberRootNode) {
 		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
 	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
 	if (subtreeHasEffect || rootHasEffect) {
-		// beforeMutaion
+		// beforeMutation
 		// mutation
 		commitMutationEffects(finishedWork, root);
 		root.current = finishedWork;
